@@ -3,7 +3,6 @@ use bytes::{Buf, BytesMut};
 use std::convert::AsRef;
 use std::convert::TryInto;
 use std::iter::Iterator;
-use std::task::{Context, Poll};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
