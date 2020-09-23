@@ -96,6 +96,25 @@ pub(super) enum ClientState {
     TurnPull = STATE_TURN_PULL,
 }
 
+impl TryInto<ClientState> for u8 {
+    type Error = ();
+
+    fn try_into(self) -> Result<ClientState, Self::Error> {
+        match self {
+            STATE_SERVER_INFO => Ok(ClientState::ServerInfo),
+            STATE_PING => Ok(ClientState::Ping),
+            STATE_PONG => Ok(ClientState::Pong),
+            STATE_MSG => Ok(ClientState::Msg),
+            STATE_OFFSET => Ok(ClientState::Offset),
+            STATE_ACK => Ok(ClientState::Ack),
+            STATE_ERR => Ok(ClientState::Err),
+            STATE_TURN_PULL => Ok(ClientState::TurnPull),
+            STATE_TURN_PUSH => Ok(ClientState::TurnPush),
+            _ => Err(()),
+        }
+    }
+}
+
 const SUPPORT_PUSH: u16 = 1;
 const SUPPORT_PULL: u16 = 2;
 const SUPPORT_TLS: u16 = 4;
