@@ -60,7 +60,7 @@ impl<'a> Iterator for Iter<'a> {
             } else if let Some(state) = &self.source.state {
                 match state {
                     ClientState::ServerInfo => {
-                        if self.source.buffer.len() > 7 {
+                        if self.source.buffer.len() > 6 {
                             self.source.state = None;
                             return Some(Ok(Message::Info(
                                 self.source.buffer.get_u8(),
