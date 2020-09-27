@@ -1,7 +1,5 @@
-use protocol::send_to_client::{
-    decode::{Decode, Message, Error},
-};
-use bytes::{BytesMut, BufMut};
+use bytes::{BufMut, BytesMut};
+use protocol::send_to_client::decode::{Decode, Error, Message};
 
 fn init(buff: &[u8]) -> Option<Result<Message, Error>> {
     let mut decode = Decode::new(1024);
@@ -16,7 +14,7 @@ fn decode_hand_shake() {
 
     // hand shake
     buff.put_u8(1);
-    
+
     // version
     buff.put_u8(1);
 
@@ -41,7 +39,7 @@ fn decode_hand_shake_error() {
 
     // hand shake
     buff.put_u8(std::u8::MAX);
-    
+
     // version
     buff.put_u8(1);
 
