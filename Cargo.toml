@@ -12,3 +12,11 @@ thiserror = "1.0.20"
 
 [dev-dependencies]
 criterion = "*"
+
+[[bench]]
+name = "client_handshake"
+harness = false
+
+[[bench]]
+name = "server_handshake"
+harness = false
