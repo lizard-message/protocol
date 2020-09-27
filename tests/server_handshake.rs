@@ -19,7 +19,7 @@ fn decode_hand_shake() {
     buff.put_u8(1);
 
     // mask
-    buff.put_u16_le(3);
+    buff.put_u16(3);
 
     // client message size
     buff.put_u8(10);
@@ -44,7 +44,7 @@ fn decode_hand_shake_error() {
     buff.put_u8(1);
 
     // mask
-    buff.put_u16_le(3);
+    buff.put_u16(3);
 
     // client message size
     buff.put_u8(10);
@@ -77,7 +77,7 @@ fn decode_hand_shake_chunk() {
     assert!(result.is_none());
 
     buff.clear();
-    buff.put_u16_le(3);
+    buff.put_u16(3);
     decode.set_buff(&buff);
     let result = decode.iter().next();
     dbg!(&result);

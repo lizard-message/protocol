@@ -20,10 +20,10 @@ fn decode_handshake() {
     buf.put_u8(1);
 
     // support
-    buf.put_u16_le(3);
+    buf.put_u16(3);
 
     // message_length
-    buf.put_u32_le(10);
+    buf.put_u32(10);
 
     if let Message::Info(version, mask, max_message_length) = init(&buf).unwrap().unwrap() {
         assert_eq!(version, 1);
@@ -38,8 +38,8 @@ fn decode_handshake_error() {
     let mut buf = BytesMut::new();
     buf.put_u8(u8_MAX);
     buf.put_u8(1);
-    buf.put_u16_le(3);
-    buf.put_u32_le(10);
+    buf.put_u16(3);
+    buf.put_u32(10);
 
 
     if let Message::Info(version, mask, max_message_length) = init(&buf).unwrap().unwrap() {
@@ -59,10 +59,10 @@ fn decode_handshake_chunk() {
     decode.set_buff(&[1]);
     assert!(decode.iter().next().is_none());
 
-    decode.set_buff(&[3, 0]);
+    decode.set_buff(&[0, 3]);
     assert!(decode.iter().next().is_none());
 
-    decode.set_buff(&[10, 0,0,0]);
+    decode.set_buff(&[0,0,0,10]);
     
     if let Message::Info(version, mask, max_message_length) = decode.iter().next().unwrap().unwrap() {
         assert_eq!(version, 1);

@@ -69,7 +69,7 @@ impl<'a> Iterator for Iter<'a> {
                             self.source.state = None;
                             return Some(Ok(Message::Info(
                                 self.source.buffer.get_u8(),
-                                self.source.buffer.get_u16_le(),
+                                self.source.buffer.get_u16(),
                                 self.source.buffer.get_u8(),
                             )));
                         } else {

@@ -50,8 +50,8 @@ impl ServerConfig {
 
         buff.put_u8(STATE_SERVER_INFO);
         buff.put_u8(self.version);
-        buff.put_u16_le(self.support);
-        buff.put_u32_le(self.max_message_length);
+        buff.put_u16(self.support);
+        buff.put_u32(self.max_message_length);
 
         buff
     }

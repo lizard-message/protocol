@@ -50,7 +50,7 @@ impl ClientConfig {
 
         buff.put_u8(STATE_CLIENT_INFO);
         buff.put_u8(self.version);
-        buff.put_u16_le(self.support);
+        buff.put_u16(self.support);
         buff.put_u8(self.max_task_size);
 
         buff
