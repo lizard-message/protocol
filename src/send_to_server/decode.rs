@@ -13,6 +13,10 @@ pub enum Error {
 #[derive(Debug)]
 pub enum Message {
     Info(u8, u16, u32),
+    Ping,
+    Pong,
+    TurnPush,
+    TurnPull,
 }
 
 #[derive(Debug)]
@@ -72,10 +76,12 @@ impl<'a> Iterator for Iter<'a> {
                         }
                     }
                     ClientState::Ping => {
-                        return None;
+                        self.source.state = None;
+                        return Some(Ok(Message::Ping));
                     }
                     ClientState::Pong => {
-                        return None;
+                        self.source.state = None;
+                        return Some(Ok(Message::Pong));
                     }
                     ClientState::TurnPush => {
                         return None;

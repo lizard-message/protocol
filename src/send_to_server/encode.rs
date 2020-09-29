@@ -1,4 +1,11 @@
-use crate::state::{Support, STATE_CLIENT_INFO, STATE_PING, STATE_PONG};
+use crate::state::{
+  Support,
+  STATE_CLIENT_INFO,
+  STATE_PING,
+  STATE_PONG,
+  STATE_TURN_PUSH,
+  STATE_TURN_PULL,
+};
 use bytes::{BufMut, BytesMut};
 use std::default::Default;
 use std::u8::MAX as u8_MAX;
@@ -72,5 +79,23 @@ pub struct Pong {}
 impl Pong {
     pub const fn encode() -> &'static [u8] {
         &[STATE_PONG]
+    }
+}
+
+#[derive(Debug)]
+pub struct TurnPush {}
+
+impl TurnPush {
+    pub const fn encode() -> &'static [u8] {
+        &[STATE_TURN_PUSH]
+    }
+}
+
+#[derive(Debug)]
+pub struct TurnPull {}
+
+impl TurnPull {
+    pub const fn encode() -> &'static [u8] {
+        &[STATE_TURN_PULL]
     }
 }
