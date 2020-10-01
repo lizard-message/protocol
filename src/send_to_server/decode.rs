@@ -21,6 +21,7 @@ pub enum Message {
     Pong,
     TurnPush,
     TurnPull,
+    Ok,
 }
 
 #[derive(Debug)]
@@ -110,6 +111,10 @@ impl<'a> Iterator for Iter<'a> {
                     }
                     ClientState::Err => {
                         return None;
+                    }
+                    ClientState::Ok => {
+                        self.source.state = None;
+                        return Some(Ok(Message::Ok));
                     }
                 }
             } else {
