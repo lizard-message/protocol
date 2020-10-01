@@ -13,7 +13,11 @@ pub enum Error {
 
 #[derive(Debug)]
 pub enum Message {
-    Info(u8, u16, u8),
+    Info {
+        version: u8,
+        support: u16,
+        max_message_size: u8,
+    },
     Ping,
     Pong,
     TurnPush,
@@ -67,11 +71,11 @@ impl<'a> Iterator for Iter<'a> {
                     ServerState::ClientInfo => {
                         if self.source.buffer.len() > 3 {
                             self.source.state = None;
-                            return Some(Ok(Message::Info(
-                                self.source.buffer.get_u8(),
-                                self.source.buffer.get_u16(),
-                                self.source.buffer.get_u8(),
-                            )));
+                            return Some(Ok(Message::Info {
+                                version: self.source.buffer.get_u8(),
+                                support: self.source.buffer.get_u16(),
+                                max_message_size: self.source.buffer.get_u8(),
+                            }));
                         } else {
                             return None;
                         }
