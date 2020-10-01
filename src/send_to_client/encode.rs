@@ -1,5 +1,6 @@
-use crate::state::{ClientState, Support, STATE_PING, STATE_PONG, STATE_SERVER_INFO};
+use crate::state::{ClientState, Support, STATE_OK, STATE_PING, STATE_PONG, STATE_SERVER_INFO};
 use bytes::{BufMut, BytesMut};
+use std::convert::AsRef;
 use std::default::Default;
 use std::u32::MAX as u32_MAX;
 
@@ -72,5 +73,14 @@ pub struct Pong {}
 impl Pong {
     pub const fn encode() -> &'static [u8] {
         &[STATE_PONG]
+    }
+}
+
+#[derive(Debug)]
+pub struct Ok {}
+
+impl Ok {
+    pub const fn encode() -> &'static [u8] {
+        &[STATE_OK]
     }
 }
