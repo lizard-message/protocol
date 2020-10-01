@@ -2,18 +2,44 @@ use std::cmp::PartialEq;
 use std::convert::{Into, TryInto};
 use std::ops::{BitAnd, BitOrAssign};
 
+// 服务器信息
 pub(crate) const STATE_SERVER_INFO: u8 = 0;
+
+// 客户端信息
 pub(crate) const STATE_CLIENT_INFO: u8 = 1;
+
+// 心跳发出
 pub(crate) const STATE_PING: u8 = 2;
+
+// 心跳应答
 pub(crate) const STATE_PONG: u8 = 3;
+
+// 消息
 pub(crate) const STATE_MSG: u8 = 4;
+
+// 消息序号, 用于拉取消息的时候用
 pub(crate) const STATE_OFFSET: u8 = 5;
+
+// 应答收到消息
 pub(crate) const STATE_ACK: u8 = 6;
+
+// 订阅消息
 pub(crate) const STATE_SUB: u8 = 7;
+
+// 取消订阅
 pub(crate) const STATE_UNSUB: u8 = 8;
+
+// 错误
 pub(crate) const STATE_ERR: u8 = 9;
+
+// 转为推消息
 pub(crate) const STATE_TURN_PUSH: u8 = 10;
+
+// 转为拉消息
 pub(crate) const STATE_TURN_PULL: u8 = 11;
+
+// 确认, 回答 turn_push 或 turn_pull
+pub(crate) const STATE_OK: u8 = 12;
 
 #[repr(u8)]
 #[derive(Debug)]
@@ -27,6 +53,7 @@ pub(super) enum ServerState {
     Err = STATE_ERR,
     TurnPush = STATE_TURN_PUSH,
     TurnPull = STATE_TURN_PULL,
+    Ok = STATE_OK,
 }
 
 impl Into<u8> for ServerState {
@@ -41,6 +68,7 @@ impl Into<u8> for ServerState {
             Self::Err => STATE_ERR,
             Self::TurnPush => STATE_TURN_PUSH,
             Self::TurnPull => STATE_TURN_PULL,
+            Self::Ok => STATE_OK,
         }
     }
 }
@@ -59,6 +87,7 @@ impl TryInto<ServerState> for u8 {
             STATE_ERR => Ok(ServerState::Err),
             STATE_TURN_PULL => Ok(ServerState::TurnPull),
             STATE_TURN_PUSH => Ok(ServerState::TurnPush),
+            STATE_OK => Ok(ServerState::Ok),
             _ => Err(()),
         }
     }
@@ -76,6 +105,7 @@ impl PartialEq<u8> for ServerState {
             Self::Err => STATE_ERR == *other,
             Self::TurnPush => STATE_TURN_PUSH == *other,
             Self::TurnPull => STATE_TURN_PULL == *other,
+            Self::Ok => STATE_OK == *other,
         }
     }
 }
@@ -94,6 +124,7 @@ pub(super) enum ClientState {
     Err = STATE_ERR,
     TurnPush = STATE_TURN_PUSH,
     TurnPull = STATE_TURN_PULL,
+    Ok = STATE_OK,
 }
 
 impl Into<u8> for ClientState {
@@ -110,6 +141,7 @@ impl Into<u8> for ClientState {
             Self::Err => STATE_ERR,
             Self::TurnPush => STATE_TURN_PUSH,
             Self::TurnPull => STATE_TURN_PULL,
+            Self::Ok => STATE_OK,
         }
     }
 }
@@ -128,6 +160,7 @@ impl TryInto<ClientState> for u8 {
             STATE_ERR => Ok(ClientState::Err),
             STATE_TURN_PULL => Ok(ClientState::TurnPull),
             STATE_TURN_PUSH => Ok(ClientState::TurnPush),
+            STATE_OK => Ok(ClientState::Ok),
             _ => Err(()),
         }
     }
