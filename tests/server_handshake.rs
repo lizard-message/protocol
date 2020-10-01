@@ -25,7 +25,12 @@ fn decode_hand_shake() {
     buff.put_u8(10);
 
     // a success hand shake
-    if let Message::Info(version, mask, message_size) = init(&buff).unwrap().unwrap() {
+    if let Message::Info {
+        version,
+        support: mask,
+        max_message_size: message_size,
+    } = init(&buff).unwrap().unwrap()
+    {
         assert_eq!(version, 1);
         assert_eq!(mask, 3);
         assert_eq!(message_size, 10);
@@ -50,7 +55,12 @@ fn decode_hand_shake_error() {
     buff.put_u8(10);
 
     // a success hand shake
-    if let Message::Info(version, mask, message_size) = init(&buff).unwrap().unwrap() {
+    if let Message::Info {
+        version,
+        support: mask,
+        max_message_size: message_size,
+    } = init(&buff).unwrap().unwrap()
+    {
         assert_eq!(version, 1);
         assert_eq!(mask, 3);
         assert_eq!(message_size, 10);
@@ -89,7 +99,12 @@ fn decode_hand_shake_chunk() {
     let result = decode.iter().next();
     dbg!(&result);
 
-    if let Message::Info(version, mask, message_size) = result.unwrap().unwrap() {
+    if let Message::Info {
+        version,
+        support: mask,
+        max_message_size: message_size,
+    } = result.unwrap().unwrap()
+    {
         assert_eq!(version, 1);
         assert_eq!(mask, 3);
         assert_eq!(message_size, 10);
