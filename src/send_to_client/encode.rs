@@ -1,4 +1,6 @@
-use crate::state::{ClientState, Support, STATE_OK, STATE_PING, STATE_PONG, STATE_SERVER_INFO};
+use crate::state::{
+    ClientState, Support, STATE_ERR, STATE_OK, STATE_PING, STATE_PONG, STATE_SERVER_INFO,
+};
 use bytes::{BufMut, BytesMut};
 use std::convert::AsRef;
 use std::default::Default;
@@ -82,5 +84,25 @@ pub struct Ok {}
 impl Ok {
     pub const fn encode() -> &'static [u8] {
         &[STATE_OK]
+    }
+}
+
+#[derive(Debug)]
+pub struct Err {
+    msg: &'static str,
+}
+
+impl Err {
+    pub fn new(msg: &'static str) -> Self {
+        debug_assert!(msg.len() < (std::u16::MAX as usize));
+        Self { msg }
+    }
+
+    pub fn encode(self) -> BytesMut {
+        let mut buff = BytesMut::with_capacity(self.msg.len() + 2 + 1);
+        buff.put_u8(STATE_ERR);
+        buff.put_u16(self.msg.len() as u16);
+        buff.extend_from_slice(self.msg.as_bytes());
+        buff
     }
 }

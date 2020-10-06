@@ -23,12 +23,16 @@ pub enum Message {
     TurnPush,
     TurnPull,
     Ok,
+    Err {
+        msg: BytesMut,
+    },
 }
 
 #[derive(Debug)]
 pub struct Decode {
     buffer: BytesMut,
     state: Option<ServerState>,
+    length: Option<usize>,
 }
 
 impl Decode {
@@ -36,6 +40,7 @@ impl Decode {
         Self {
             buffer: BytesMut::with_capacity(capacity),
             state: None,
+            length: None,
         }
     }
 
@@ -90,7 +95,26 @@ impl<'a> Iterator for Iter<'a> {
                         return Some(Ok(Message::Pong));
                     }
                     ServerState::Err => {
-                        return None;
+                        if self.source.length.is_some() {
+                            if let Some(length) = self.source.length.as_ref() {
+                                if self.source.buffer.len() >= *length {
+                                    let msg = self
+                                        .source
+                                        .buffer
+                                        .split_off(self.source.buffer.len() - *length);
+                                    self.source.state = None;
+                                    return Some(Ok(Message::Err { msg }));
+                                } else {
+                                    return None;
+                                }
+                            }
+                        } else {
+                            if self.source.buffer.len() > 1 {
+                                self.source.length = Some(self.source.buffer.get_u16() as usize);
+                            } else {
+                                return None;
+                            }
+                        }
                     }
                     ServerState::Msg => {
                         return None;
