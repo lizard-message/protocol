@@ -20,15 +20,17 @@ fn decode_error() {
 fn decode_error_chunk() {
     let mut decode = Decode::new(33);
 
-    decode.set_buff(&[9]);
-    assert!(decode.iter().next().is_none());
+    for _ in 0..100 {
+        decode.set_buff(&[9]);
+        assert!(decode.iter().next().is_none());
 
-    decode.set_buff(&[0, 12]);
-    assert!(decode.iter().next().is_none());
+        decode.set_buff(&[0, 12]);
+        assert!(decode.iter().next().is_none());
 
-    decode.set_buff(b"decode error");
+        decode.set_buff(b"decode error");
 
-    if let Message::Err { msg: msg } = decode.iter().next().unwrap().unwrap() {
-        assert_eq!(&msg, &b"decode error"[..]);
+        if let Message::Err { msg: msg } = decode.iter().next().unwrap().unwrap() {
+            assert_eq!(&msg, &b"decode error"[..]);
+        }
     }
 }

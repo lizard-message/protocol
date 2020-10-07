@@ -72,41 +72,44 @@ fn decode_hand_shake_chunk() {
     let mut decode = Decode::new(1024);
     let mut buff = BytesMut::new();
 
-    buff.put_u8(1);
-    decode.set_buff(&buff);
-    let result = decode.iter().next();
-    dbg!(&result);
-    assert!(result.is_none());
+    for _ in 0..100 {
+        buff.put_u8(1);
+        decode.set_buff(&buff);
+        let result = decode.iter().next();
+        dbg!(&result);
+        assert!(result.is_none());
 
-    // buffer clear, so not value in buffer
-    buff.clear();
-    buff.put_u8(1);
-    decode.set_buff(&buff);
-    let result = decode.iter().next();
-    dbg!(&result);
-    assert!(result.is_none());
+        // buffer clear, so not value in buffer
+        buff.clear();
+        buff.put_u8(1);
+        decode.set_buff(&buff);
+        let result = decode.iter().next();
+        dbg!(&result);
+        assert!(result.is_none());
 
-    buff.clear();
-    buff.put_u16(3);
-    decode.set_buff(&buff);
-    let result = decode.iter().next();
-    dbg!(&result);
-    assert!(result.is_none());
+        buff.clear();
+        buff.put_u16(3);
+        decode.set_buff(&buff);
+        let result = decode.iter().next();
+        dbg!(&result);
+        assert!(result.is_none());
 
-    buff.clear();
-    buff.put_u8(10);
-    decode.set_buff(&buff);
-    let result = decode.iter().next();
-    dbg!(&result);
+        buff.clear();
+        buff.put_u8(10);
+        decode.set_buff(&buff);
+        let result = decode.iter().next();
+        dbg!(&result);
 
-    if let Message::Info {
-        version,
-        support: mask,
-        max_message_size: message_size,
-    } = result.unwrap().unwrap()
-    {
-        assert_eq!(version, 1);
-        assert_eq!(mask, 3);
-        assert_eq!(message_size, 10);
+        if let Message::Info {
+            version,
+            support: mask,
+            max_message_size: message_size,
+        } = result.unwrap().unwrap()
+        {
+            assert_eq!(version, 1);
+            assert_eq!(mask, 3);
+            assert_eq!(message_size, 10);
+            buff.clear();
+        }
     }
 }

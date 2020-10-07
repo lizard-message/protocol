@@ -52,11 +52,17 @@ impl Decode {
     where
         R: AsRef<[u8]>,
     {
-        self.buffer.extend_from_slice(buff.as_ref())
+        self.buffer.extend_from_slice(buff.as_ref());
     }
 
     pub fn iter(&mut self) -> Iter<'_> {
         Iter { source: self }
+    }
+
+    // 重置状态和length
+    fn reset(&mut self) {
+        self.state = None;
+        self.length = None;
     }
 }
 
@@ -76,7 +82,7 @@ impl<'a> Iterator for Iter<'a> {
                 match state {
                     ServerState::ClientInfo => {
                         if self.source.buffer.len() > 3 {
-                            self.source.state = None;
+                            self.source.reset();
                             return Some(Ok(Message::Info {
                                 version: self.source.buffer.get_u8(),
                                 support: self.source.buffer.get_u16(),
@@ -87,22 +93,19 @@ impl<'a> Iterator for Iter<'a> {
                         }
                     }
                     ServerState::Ping => {
-                        self.source.state = None;
+                        self.source.reset();
                         return Some(Ok(Message::Ping));
                     }
                     ServerState::Pong => {
-                        self.source.state = None;
+                        self.source.reset();
                         return Some(Ok(Message::Pong));
                     }
                     ServerState::Err => {
                         if self.source.length.is_some() {
                             if let Some(length) = self.source.length.as_ref() {
                                 if self.source.buffer.len() >= *length {
-                                    let msg = self
-                                        .source
-                                        .buffer
-                                        .split_off(self.source.buffer.len() - *length);
-                                    self.source.state = None;
+                                    let msg = self.source.buffer.split_to(*length);
+                                    self.source.reset();
                                     return Some(Ok(Message::Err { msg }));
                                 } else {
                                     return None;
@@ -126,21 +129,20 @@ impl<'a> Iterator for Iter<'a> {
                         return None;
                     }
                     ServerState::TurnPull => {
-                        self.source.state = None;
+                        self.source.reset();
                         return Some(Ok(Message::TurnPull));
                     }
                     ServerState::TurnPush => {
-                        self.source.state = None;
+                        self.source.reset();
                         return Some(Ok(Message::TurnPush));
                     }
                     ServerState::Ok => {
-                        self.source.state = None;
+                        self.source.reset();
                         return Some(Ok(Message::Ok));
                     }
                 }
             } else {
                 let byte = self.source.buffer.get_u8();
-
                 match byte.try_into() {
                     Ok(state) => self.source.state = Some(state),
                     Err(e) => return Some(Err(Error::Parse)),

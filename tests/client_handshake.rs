@@ -61,25 +61,27 @@ fn decode_handshake_error() {
 fn decode_handshake_chunk() {
     let mut decode = Decode::new(1024);
 
-    decode.set_buff(&[0]);
-    assert!(decode.iter().next().is_none());
+    for _ in 0..100 {
+        decode.set_buff(&[0]);
+        assert!(decode.iter().next().is_none());
 
-    decode.set_buff(&[1]);
-    assert!(decode.iter().next().is_none());
+        decode.set_buff(&[1]);
+        assert!(decode.iter().next().is_none());
 
-    decode.set_buff(&[0, 3]);
-    assert!(decode.iter().next().is_none());
+        decode.set_buff(&[0, 3]);
+        assert!(decode.iter().next().is_none());
 
-    decode.set_buff(&[0, 0, 0, 10]);
+        decode.set_buff(&[0, 0, 0, 10]);
 
-    if let Message::Info {
-        version,
-        support: mask,
-        max_message_length,
-    } = decode.iter().next().unwrap().unwrap()
-    {
-        assert_eq!(version, 1);
-        assert_eq!(mask, 3);
-        assert_eq!(max_message_length, 10);
+        if let Message::Info {
+            version,
+            support: mask,
+            max_message_length,
+        } = decode.iter().next().unwrap().unwrap()
+        {
+            assert_eq!(version, 1);
+            assert_eq!(mask, 3);
+            assert_eq!(max_message_length, 10);
+        }
     }
 }
