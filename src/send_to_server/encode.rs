@@ -1,5 +1,6 @@
 use crate::state::{
-    Support, STATE_CLIENT_INFO, STATE_OK, STATE_PING, STATE_PONG, STATE_TURN_PULL, STATE_TURN_PUSH,
+    Support, STATE_CLIENT_INFO, STATE_ERR, STATE_OK, STATE_PING, STATE_PONG, STATE_TURN_PULL,
+    STATE_TURN_PUSH,
 };
 use bytes::{BufMut, BytesMut};
 use std::default::Default;
