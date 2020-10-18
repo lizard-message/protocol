@@ -1,5 +1,6 @@
 use crate::state::ServerState;
 use bytes::{Buf, BytesMut};
+use std::collections::VecDeque;
 use std::convert::AsRef;
 use std::convert::TryInto;
 use std::iter::Iterator;
@@ -26,13 +27,17 @@ pub enum Message {
     Err {
         msg: BytesMut,
     },
+    Msg {
+        msg: BytesMut,
+    },
 }
 
 #[derive(Debug)]
 pub struct Decode {
     buffer: BytesMut,
     state: Option<ServerState>,
-    length: Option<usize>,
+    length: usize,
+    message: VecDeque<BytesMut>,
 }
 
 impl Decode {
@@ -40,7 +45,8 @@ impl Decode {
         Self {
             buffer: BytesMut::with_capacity(capacity),
             state: None,
-            length: None,
+            length: 0,
+            message: VecDeque::new(),
         }
     }
 
@@ -62,7 +68,7 @@ impl Decode {
     // 重置状态和length
     fn reset(&mut self) {
         self.state = None;
-        self.length = None;
+        self.length = 0;
     }
 }
 
@@ -101,26 +107,38 @@ impl<'a> Iterator for Iter<'a> {
                         return Some(Ok(Message::Pong));
                     }
                     ServerState::Err => {
-                        if self.source.length.is_some() {
-                            if let Some(length) = self.source.length.as_ref() {
-                                if self.source.buffer.len() >= *length {
-                                    let msg = self.source.buffer.split_to(*length);
-                                    self.source.reset();
-                                    return Some(Ok(Message::Err { msg }));
-                                } else {
-                                    return None;
-                                }
-                            }
+                        if self.source.buffer.len() > 1 {
+                            self.source.length = self.source.buffer.get_u16() as usize;
+                            self.source.state = Some(ServerState::ErrContent);
                         } else {
-                            if self.source.buffer.len() > 1 {
-                                self.source.length = Some(self.source.buffer.get_u16() as usize);
-                            } else {
-                                return None;
-                            }
+                            return None;
+                        }
+                    }
+                    ServerState::ErrContent => {
+                        if self.source.buffer.len() >= self.source.length {
+                            let err_msg = self.source.buffer.split_to(self.source.length);
+                            self.source.reset();
+                            return Some(Ok(Message::Err { msg: err_msg }));
+                        } else {
+                            return None;
                         }
                     }
                     ServerState::Msg => {
-                        return None;
+                        if self.source.buffer.len() > 3 {
+                            self.source.length = self.source.buffer.get_u16() as usize;
+                            self.source.state = Some(ServerState::MsgContent);
+                        } else {
+                            return None;
+                        }
+                    }
+                    ServerState::MsgContent => {
+                        if self.source.buffer.len() >= self.source.length {
+                            let msg = self.source.buffer.split_to(self.source.length);
+                            self.source.reset();
+                            return Some(Ok(Message::Msg { msg }));
+                        } else {
+                            return None;
+                        }
                     }
                     ServerState::Ack => {
                         return None;
@@ -139,6 +157,20 @@ impl<'a> Iterator for Iter<'a> {
                     ServerState::Ok => {
                         self.source.reset();
                         return Some(Ok(Message::Ok));
+                    }
+                    ServerState::Sub => {
+                        if self.source.buffer.len() >= 1 {
+                            self.source.length = self.source.buffer.get_u8() as usize;
+                            self.source.state = Some(ServerState::SubName);
+                        } else {
+                            return None;
+                        }
+                    }
+                    ServerState::SubName => {
+                        if self.source.buffer.len() >= self.source.length {
+                        } else {
+                            return None;
+                        }
                     }
                 }
             } else {

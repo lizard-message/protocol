@@ -1,4 +1,4 @@
-use std::cmp::PartialEq;
+use std::borrow::{Borrow, BorrowMut};
 use std::convert::{Into, TryInto};
 use std::ops::{BitAnd, BitOrAssign};
 
@@ -41,36 +41,22 @@ pub(crate) const STATE_TURN_PULL: u8 = 11;
 // 确认, 回答 turn_push 或 turn_pull
 pub(crate) const STATE_OK: u8 = 12;
 
-#[repr(u8)]
 #[derive(Debug)]
 pub(super) enum ServerState {
-    ClientInfo = STATE_CLIENT_INFO,
-    Ping = STATE_PING,
-    Pong = STATE_PONG,
-    Msg = STATE_MSG,
-    Offset = STATE_OFFSET,
-    Ack = STATE_ACK,
-    Err = STATE_ERR,
-    TurnPush = STATE_TURN_PUSH,
-    TurnPull = STATE_TURN_PULL,
-    Ok = STATE_OK,
-}
-
-impl Into<u8> for ServerState {
-    fn into(self) -> u8 {
-        match self {
-            Self::ClientInfo => STATE_CLIENT_INFO,
-            Self::Ping => STATE_PING,
-            Self::Pong => STATE_PONG,
-            Self::Msg => STATE_MSG,
-            Self::Offset => STATE_OFFSET,
-            Self::Ack => STATE_ACK,
-            Self::Err => STATE_ERR,
-            Self::TurnPush => STATE_TURN_PUSH,
-            Self::TurnPull => STATE_TURN_PULL,
-            Self::Ok => STATE_OK,
-        }
-    }
+    ClientInfo,
+    Ping,
+    Pong,
+    Msg,
+    MsgContent,
+    Offset,
+    Ack,
+    Err,
+    ErrContent,
+    TurnPush,
+    TurnPull,
+    Ok,
+    Sub,
+    SubName,
 }
 
 impl TryInto<ServerState> for u8 {
@@ -93,20 +79,9 @@ impl TryInto<ServerState> for u8 {
     }
 }
 
-impl PartialEq<u8> for ServerState {
-    fn eq(&self, other: &u8) -> bool {
-        match self {
-            Self::ClientInfo => STATE_CLIENT_INFO == *other,
-            Self::Ping => STATE_PING == *other,
-            Self::Pong => STATE_PONG == *other,
-            Self::Msg => STATE_MSG == *other,
-            Self::Offset => STATE_OFFSET == *other,
-            Self::Ack => STATE_ACK == *other,
-            Self::Err => STATE_ERR == *other,
-            Self::TurnPush => STATE_TURN_PUSH == *other,
-            Self::TurnPull => STATE_TURN_PULL == *other,
-            Self::Ok => STATE_OK == *other,
-        }
+impl ServerState {
+    pub(super) fn as_mut(&mut self) -> &mut Self {
+        self
     }
 }
 
