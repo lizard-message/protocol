@@ -1,8 +1,6 @@
-use crate::state::{
-    ClientState, Support, STATE_ERR, STATE_OK, STATE_PING, STATE_PONG, STATE_SERVER_INFO,
-};
+use crate::state::{Support, STATE_ERR, STATE_OK, STATE_PING, STATE_PONG, STATE_SERVER_INFO};
 use bytes::{BufMut, BytesMut};
-use std::convert::AsRef;
+
 use std::default::Default;
 use std::u32::MAX as u32_MAX;
 
