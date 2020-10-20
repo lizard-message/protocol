@@ -148,7 +148,7 @@ impl<'a> Iterator for Iter<'a> {
 
                 match byte.try_into() {
                     Ok(state) => self.source.state = Some(state),
-                    Err(e) => return Some(Err(Error::Parse)),
+                    Err(_e) => return Some(Err(Error::Parse)),
                 }
             }
         }

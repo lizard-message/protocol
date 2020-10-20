@@ -33,17 +33,14 @@ pub enum Message {
     Sub {
         name: BytesMut,
         reply: bool,
-    }
+    },
 }
 
 // 解析出来的参数暂存
 #[derive(Debug)]
 enum Transition {
     None,
-    Sub {
-        name: BytesMut,
-        reply: bool,
-    }
+    Sub { name: BytesMut, reply: bool },
 }
 
 impl Transition {
@@ -55,13 +52,21 @@ impl Transition {
     }
 
     fn set_sub_name(&mut self, name: BytesMut) {
-        if let Transition::Sub{ name: non_name, reply: _} = self {
+        if let Transition::Sub {
+            name: non_name,
+            reply: _,
+        } = self
+        {
             *non_name = name;
         }
     }
 
     fn set_sub_reply(&mut self, reply: bool) {
-        if let Transition::Sub{ name: _, reply: non_reply} = self {
+        if let Transition::Sub {
+            name: _,
+            reply: non_reply,
+        } = self
+        {
             *non_reply = reply;
         }
     }
