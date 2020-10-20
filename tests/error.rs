@@ -4,7 +4,7 @@ use bytes::{BufMut, BytesMut};
 fn server_decode_error() {
     use protocol::send_to_client::decode::{Decode, Message};
     let mut buf = BytesMut::new();
-    buf.put_u8(9);
+    buf.put_u8(10);
     buf.put_u16(12);
     buf.put_slice(b"decode error");
 
@@ -22,7 +22,7 @@ fn server_decode_error_chunk() {
     let mut decode = Decode::new(33);
 
     for _ in 0..100 {
-        decode.set_buff(&[9]);
+        decode.set_buff(&[10]);
         assert!(decode.iter().next().is_none());
 
         decode.set_buff(&[0, 12]);
@@ -41,7 +41,7 @@ fn client_decode_error() {
     use protocol::send_to_server::decode::{Decode, Message};
 
     let mut buf = BytesMut::new();
-    buf.put_u8(9);
+    buf.put_u8(10);
     buf.put_u16(12);
     buf.put_slice(b"decode error");
 
@@ -59,7 +59,7 @@ fn client_decode_error_chunk() {
     let mut decode = Decode::new(33);
 
     for _ in 0..100 {
-        decode.set_buff(&[9]);
+        decode.set_buff(&[10]);
         assert!(decode.iter().next().is_none());
 
         decode.set_buff(&[0, 12]);
