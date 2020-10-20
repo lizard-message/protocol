@@ -1,4 +1,3 @@
-use std::borrow::{Borrow, BorrowMut};
 use std::convert::{Into, TryInto};
 use std::ops::{BitAnd, BitOrAssign};
 
@@ -41,22 +40,42 @@ pub(crate) const STATE_TURN_PULL: u8 = 11;
 // 确认, 回答 turn_push 或 turn_pull
 pub(crate) const STATE_OK: u8 = 12;
 
+// 服务器解析协议状态
 #[derive(Debug)]
 pub(super) enum ServerState {
+    
+    // 客户端信息
     ClientInfo,
+
     Ping,
     Pong,
-    Msg,
-    MsgContent,
+
     Offset,
     Ack,
+
+    // 解析错误
     Err,
+
+    // 解析错误内容
     ErrContent,
     TurnPush,
     TurnPull,
     Ok,
+
+    // 解析发布
+    Pub,
+
+    // 解析发布内容
+    PubMsg,
+
+    // 订阅
     Sub,
+
+    // 解析订阅名称
     SubName,
+
+    // 解析是否回复订阅
+    SubReply,
 }
 
 impl TryInto<ServerState> for u8 {
@@ -67,21 +86,16 @@ impl TryInto<ServerState> for u8 {
             STATE_CLIENT_INFO => Ok(ServerState::ClientInfo),
             STATE_PING => Ok(ServerState::Ping),
             STATE_PONG => Ok(ServerState::Pong),
-            STATE_MSG => Ok(ServerState::Msg),
             STATE_OFFSET => Ok(ServerState::Offset),
             STATE_ACK => Ok(ServerState::Ack),
             STATE_ERR => Ok(ServerState::Err),
             STATE_TURN_PULL => Ok(ServerState::TurnPull),
             STATE_TURN_PUSH => Ok(ServerState::TurnPush),
             STATE_OK => Ok(ServerState::Ok),
+            STATE_SUB => Ok(ServerState::Sub),
+            STATE_PUB => Ok(ServerState::Pub),
             _ => Err(()),
         }
-    }
-}
-
-impl ServerState {
-    pub(super) fn as_mut(&mut self) -> &mut Self {
-        self
     }
 }
 

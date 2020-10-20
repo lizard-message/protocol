@@ -24,3 +24,7 @@ harness = false
 [[bench]]
 name = "error"
 harness = false
+
+[[bench]]
+name = "sub"
+harness = false
