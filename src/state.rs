@@ -25,25 +25,27 @@ pub(crate) const STATE_ACK: u8 = 6;
 // 订阅消息
 pub(crate) const STATE_SUB: u8 = 7;
 
+// 发布消息
+pub(crate) const STATE_PUB: u8 = 8;
+
 // 取消订阅
-pub(crate) const STATE_UNSUB: u8 = 8;
+pub(crate) const STATE_UNSUB: u8 = 9;
 
 // 错误
-pub(crate) const STATE_ERR: u8 = 9;
+pub(crate) const STATE_ERR: u8 = 10;
 
 // 转为推消息
-pub(crate) const STATE_TURN_PUSH: u8 = 10;
+pub(crate) const STATE_TURN_PUSH: u8 = 11;
 
 // 转为拉消息
-pub(crate) const STATE_TURN_PULL: u8 = 11;
+pub(crate) const STATE_TURN_PULL: u8 = 12;
 
 // 确认, 回答 turn_push 或 turn_pull
-pub(crate) const STATE_OK: u8 = 12;
+pub(crate) const STATE_OK: u8 = 13;
 
 // 服务器解析协议状态
 #[derive(Debug)]
 pub(super) enum ServerState {
-    
     // 客户端信息
     ClientInfo,
 
