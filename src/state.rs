@@ -67,11 +67,23 @@ pub(super) enum ServerState {
     // 解析发布
     Pub,
 
+    // 解析发布名称的长度
+    PubSubNameLength,
+
+    // 解析发布名称, 用于识别订阅名称
+    PubSubName,
+
+    // 解析发布内容长度
+    PubMsgLength,
+
     // 解析发布内容
     PubMsg,
 
     // 订阅
     Sub,
+
+    // 解析订阅名称的长度
+    SubNameLength,
 
     // 解析订阅名称
     SubName,

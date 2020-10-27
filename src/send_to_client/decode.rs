@@ -28,6 +28,7 @@ pub enum Message {
         msg: BytesMut,
     },
     Pub {
+        name: BytesMut,
         msg: BytesMut,
     },
     Sub {
@@ -41,6 +42,7 @@ pub enum Message {
 enum Transition {
     None,
     Sub { name: BytesMut, reply: bool },
+    Pub { name: BytesMut, msg: BytesMut },
 }
 
 impl Transition {
@@ -71,6 +73,24 @@ impl Transition {
         }
     }
 
+    fn set_pub_name(&mut self, name: BytesMut) {
+        if let Transition::Pub {
+            name: non_name,
+            msg: _,
+        } = self {
+            *non_name = name;
+        }
+    }
+
+    fn set_pub_msg(&mut self, msg: BytesMut) {
+        if let Transition::Pub {
+            name: _,
+            msg: non_msg,
+        } = self {
+            *non_msg = msg;
+        }
+    }
+
     fn return_params(&mut self) -> Result<Message, Error> {
         let mut item = Transition::None;
         swap(self, &mut item);
@@ -78,6 +98,7 @@ impl Transition {
         match item {
             Self::None => Err(Error::Parse),
             Self::Sub { name, reply } => Ok(Message::Sub { name, reply }),
+            Self::Pub { name, msg } => Ok(Message::Pub { name, msg }),
         }
     }
 }
@@ -175,18 +196,34 @@ impl<'a> Iterator for Iter<'a> {
                         }
                     }
                     ServerState::Pub => {
+                        if self.source.buffer.len() > 1 {
+                            self.source.length = self.source.buffer.get_u8() as usize;
+                            self.source.state = Some(ServerState::PubSubName);
+                        } else {
+                            return None;
+                        }
+                    }
+                    ServerState::PubSubNameLength => {
+
+                    }
+                    ServerState::PubSubName => {
                         if self.source.buffer.len() > 3 {
                             self.source.length = self.source.buffer.get_u16() as usize;
+
                             self.source.state = Some(ServerState::PubMsg);
                         } else {
                             return None;
                         }
                     }
+                    ServerState::PubMsgLength => {
+
+                    }
                     ServerState::PubMsg => {
                         if self.source.buffer.len() >= self.source.length {
                             let msg = self.source.buffer.split_to(self.source.length);
+                            self.source.params.set_pub_msg(msg);
                             self.source.reset();
-                            return Some(Ok(Message::Pub { msg }));
+                            return Some(self.source.params.return_params());
                         } else {
                             return None;
                         }
@@ -210,18 +247,21 @@ impl<'a> Iterator for Iter<'a> {
                         return Some(Ok(Message::Ok));
                     }
                     ServerState::Sub => {
+                        self.source.state = Some(ServerState::SubReply);
+                    }
+                    ServerState::SubReply => {
                         if self.source.buffer.len() >= 1 {
                             self.source.params = Transition::sub();
 
                             let reply = self.source.buffer.get_u8() == 1;
                             self.source.params.set_sub_reply(reply);
 
-                            self.source.state = Some(ServerState::SubReply);
+                            self.source.state = Some(ServerState::SubNameLength);
                         } else {
                             return None;
                         }
                     }
-                    ServerState::SubReply => {
+                    ServerState::SubNameLength => {
                         if self.source.buffer.len() >= 1 {
                             self.source.length = self.source.buffer.get_u8() as usize;
                             self.source.state = Some(ServerState::SubName);
