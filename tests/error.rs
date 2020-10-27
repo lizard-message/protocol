@@ -2,7 +2,7 @@ use bytes::{BufMut, BytesMut};
 
 #[test]
 fn server_decode_error() {
-    use protocol::send_to_client::decode::{Decode, Message};
+    use protocol::send_to_client::decode::{Decode, Erro, Message};
     let mut buf = BytesMut::new();
     buf.put_u8(10);
     buf.put_u16(12);
@@ -11,8 +11,8 @@ fn server_decode_error() {
     let mut decode = Decode::new(33);
     decode.set_buff(buf);
 
-    if let Message::Err { msg } = decode.iter().next().unwrap().unwrap() {
-        assert_eq!(&msg, &b"decode error"[..]);
+    if let Message::Err(erro) = decode.iter().next().unwrap().unwrap() {
+        assert_eq!(&erro.msg, &b"decode error"[..]);
     }
 }
 
@@ -30,8 +30,8 @@ fn server_decode_error_chunk() {
 
         decode.set_buff(b"decode error");
 
-        if let Message::Err { msg } = decode.iter().next().unwrap().unwrap() {
-            assert_eq!(&msg, &b"decode error"[..]);
+        if let Message::Err(erro) = decode.iter().next().unwrap().unwrap() {
+            assert_eq!(&erro.msg, &b"decode error"[..]);
         }
     }
 }

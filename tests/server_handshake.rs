@@ -1,5 +1,5 @@
 use bytes::{BufMut, BytesMut};
-use protocol::send_to_client::decode::{Decode, Error, Message};
+use protocol::send_to_client::decode::{Decode, Error, Info, Message};
 
 fn init(buff: &[u8]) -> Option<Result<Message, Error>> {
     let mut decode = Decode::new(1024);
@@ -25,15 +25,10 @@ fn decode_hand_shake() {
     buff.put_u8(10);
 
     // a success hand shake
-    if let Message::Info {
-        version,
-        support: mask,
-        max_message_size: message_size,
-    } = init(&buff).unwrap().unwrap()
-    {
-        assert_eq!(version, 1);
-        assert_eq!(mask, 3);
-        assert_eq!(message_size, 10);
+    if let Message::Info(info) = init(&buff).unwrap().unwrap() {
+        assert_eq!(info.version, 1);
+        assert_eq!(info.support, 3);
+        assert_eq!(info.max_message_size, 10);
     }
 }
 
@@ -55,15 +50,10 @@ fn decode_hand_shake_error() {
     buff.put_u8(10);
 
     // a success hand shake
-    if let Message::Info {
-        version,
-        support: mask,
-        max_message_size: message_size,
-    } = init(&buff).unwrap().unwrap()
-    {
-        assert_eq!(version, 1);
-        assert_eq!(mask, 3);
-        assert_eq!(message_size, 10);
+    if let Message::Info(info) = init(&buff).unwrap().unwrap() {
+        assert_eq!(info.version, 1);
+        assert_eq!(info.support, 3);
+        assert_eq!(info.max_message_size, 10);
     }
 }
 
@@ -100,15 +90,10 @@ fn decode_hand_shake_chunk() {
         let result = decode.iter().next();
         dbg!(&result);
 
-        if let Message::Info {
-            version,
-            support: mask,
-            max_message_size: message_size,
-        } = result.unwrap().unwrap()
-        {
-            assert_eq!(version, 1);
-            assert_eq!(mask, 3);
-            assert_eq!(message_size, 10);
+        if let Message::Info(info) = result.unwrap().unwrap() {
+            assert_eq!(info.version, 1);
+            assert_eq!(info.support, 3);
+            assert_eq!(info.max_message_size, 10);
             buff.clear();
         }
     }

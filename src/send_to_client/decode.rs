@@ -13,28 +13,40 @@ pub enum Error {
 }
 
 #[derive(Debug)]
+pub struct Info {
+    pub version: u8,
+    pub support: u16,
+    pub max_message_size: u8,
+}
+
+#[derive(Debug)]
+pub struct Erro {
+    pub msg: BytesMut,
+}
+
+#[derive(Debug)]
+pub struct Pub {
+    pub name: BytesMut,
+    pub msg: BytesMut,
+}
+
+#[derive(Debug)]
+pub struct Sub {
+    pub name: BytesMut,
+    pub reply: bool,
+}
+
+#[derive(Debug)]
 pub enum Message {
-    Info {
-        version: u8,
-        support: u16,
-        max_message_size: u8,
-    },
+    Info(Box<Info>),
     Ping,
     Pong,
     TurnPush,
     TurnPull,
     Ok,
-    Err {
-        msg: BytesMut,
-    },
-    Pub {
-        name: BytesMut,
-        msg: BytesMut,
-    },
-    Sub {
-        name: BytesMut,
-        reply: bool,
-    },
+    Err(Box<Erro>),
+    Pub(Box<Pub>),
+    Sub(Box<Sub>),
 }
 
 // 解析出来的参数暂存
@@ -77,7 +89,8 @@ impl Transition {
         if let Transition::Pub {
             name: non_name,
             msg: _,
-        } = self {
+        } = self
+        {
             *non_name = name;
         }
     }
@@ -86,7 +99,8 @@ impl Transition {
         if let Transition::Pub {
             name: _,
             msg: non_msg,
-        } = self {
+        } = self
+        {
             *non_msg = msg;
         }
     }
@@ -97,8 +111,8 @@ impl Transition {
 
         match item {
             Self::None => Err(Error::Parse),
-            Self::Sub { name, reply } => Ok(Message::Sub { name, reply }),
-            Self::Pub { name, msg } => Ok(Message::Pub { name, msg }),
+            Self::Sub { name, reply } => Ok(Message::Sub(Box::new(Sub { name, reply }))),
+            Self::Pub { name, msg } => Ok(Message::Pub(Box::new(Pub { name, msg }))),
         }
     }
 }
@@ -161,11 +175,11 @@ impl<'a> Iterator for Iter<'a> {
                     ServerState::ClientInfo => {
                         if self.source.buffer.len() > 3 {
                             self.source.reset();
-                            return Some(Ok(Message::Info {
+                            return Some(Ok(Message::Info(Box::new(Info {
                                 version: self.source.buffer.get_u8(),
                                 support: self.source.buffer.get_u16(),
                                 max_message_size: self.source.buffer.get_u8(),
-                            }));
+                            }))));
                         } else {
                             return None;
                         }
@@ -190,7 +204,7 @@ impl<'a> Iterator for Iter<'a> {
                         if self.source.buffer.len() >= self.source.length {
                             let err_msg = self.source.buffer.split_to(self.source.length);
                             self.source.reset();
-                            return Some(Ok(Message::Err { msg: err_msg }));
+                            return Some(Ok(Message::Err(Box::new(Erro { msg: err_msg }))));
                         } else {
                             return None;
                         }
@@ -203,9 +217,7 @@ impl<'a> Iterator for Iter<'a> {
                             return None;
                         }
                     }
-                    ServerState::PubSubNameLength => {
-
-                    }
+                    ServerState::PubSubNameLength => {}
                     ServerState::PubSubName => {
                         if self.source.buffer.len() > 3 {
                             self.source.length = self.source.buffer.get_u16() as usize;
@@ -215,9 +227,7 @@ impl<'a> Iterator for Iter<'a> {
                             return None;
                         }
                     }
-                    ServerState::PubMsgLength => {
-
-                    }
+                    ServerState::PubMsgLength => {}
                     ServerState::PubMsg => {
                         if self.source.buffer.len() >= self.source.length {
                             let msg = self.source.buffer.split_to(self.source.length);

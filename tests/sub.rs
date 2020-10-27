@@ -2,7 +2,7 @@ use bytes::{BufMut, BytesMut};
 
 #[test]
 fn server_decode_sub() {
-    use protocol::send_to_client::decode::{Decode, Message};
+    use protocol::send_to_client::decode::{Decode, Message, Sub};
 
     let mut decode = Decode::new(0);
     let mut buf = BytesMut::new();
@@ -21,9 +21,9 @@ fn server_decode_sub() {
 
     decode.set_buff(buf);
 
-    if let Message::Sub { name, reply } = decode.iter().next().unwrap().unwrap() {
-        assert_eq!(&name, &b"test"[..]);
-        assert_eq!(reply, false);
+    if let Message::Sub(sub) = decode.iter().next().unwrap().unwrap() {
+        assert_eq!(&sub.name, &b"test"[..]);
+        assert_eq!(sub.reply, false);
     }
 }
 
@@ -44,9 +44,9 @@ fn server_decode_sub_chunk() {
         assert!(decode.iter().next().is_none());
 
         decode.set_buff(b"test");
-        if let Message::Sub { name, reply } = decode.iter().next().unwrap().unwrap() {
-            assert_eq!(&name, &b"test"[..]);
-            assert_eq!(reply, true);
+        if let Message::Sub(sub) = decode.iter().next().unwrap().unwrap() {
+            assert_eq!(&sub.name, &b"test"[..]);
+            assert_eq!(sub.reply, true);
         }
     }
 }

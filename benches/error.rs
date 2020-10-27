@@ -15,8 +15,8 @@ fn criterion_benchmark(c: &mut Criterion) {
                 10, 0, 12, b'd', b'e', b'c', b'o', b'd', b'e', b' ', b'e', b'r', b'r', b'o', b'r',
             ]);
 
-            if let Message::Err { msg } = decode.iter().next().unwrap().unwrap() {
-                assert_eq!(&msg, &b"decode error"[..]);
+            if let Message::Err(erro) = decode.iter().next().unwrap().unwrap() {
+                assert_eq!(&erro.msg, &b"decode error"[..]);
             }
         });
     });
@@ -33,8 +33,8 @@ fn criterion_benchmark(c: &mut Criterion) {
         b.iter(|| {
             decode.set_buff(&buf);
 
-            if let Message::Err { msg } = decode.iter().next().unwrap().unwrap() {
-                assert_eq!(&msg, &([b' '; MAX as usize])[..]);
+            if let Message::Err (erro) = decode.iter().next().unwrap().unwrap() {
+                assert_eq!(&erro.msg, &([b' '; MAX as usize])[..]);
             }
         });
     });
