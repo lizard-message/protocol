@@ -1,3 +1,4 @@
+use crate::common::{U16_SIZE, U32_SIZE, U8_SIZE};
 use crate::state::ServerState;
 use bytes::{Buf, BytesMut};
 use std::convert::AsRef;
@@ -82,6 +83,13 @@ impl Transition {
         } = self
         {
             *non_reply = reply;
+        }
+    }
+
+    fn r#pub() -> Self {
+        Transition::Pub {
+            name: BytesMut::new(),
+            msg: BytesMut::new(),
         }
     }
 
@@ -173,7 +181,7 @@ impl<'a> Iterator for Iter<'a> {
             } else if let Some(state) = &self.source.state {
                 match state {
                     ServerState::ClientInfo => {
-                        if self.source.buffer.len() > 3 {
+                        if self.source.buffer.len() >= U32_SIZE {
                             self.source.reset();
                             return Some(Ok(Message::Info(Box::new(Info {
                                 version: self.source.buffer.get_u8(),
@@ -193,7 +201,7 @@ impl<'a> Iterator for Iter<'a> {
                         return Some(Ok(Message::Pong));
                     }
                     ServerState::Err => {
-                        if self.source.buffer.len() > 1 {
+                        if self.source.buffer.len() >= U16_SIZE {
                             self.source.length = self.source.buffer.get_u16() as usize;
                             self.source.state = Some(ServerState::ErrContent);
                         } else {
@@ -210,30 +218,42 @@ impl<'a> Iterator for Iter<'a> {
                         }
                     }
                     ServerState::Pub => {
-                        if self.source.buffer.len() > 1 {
+                        self.source.params = Transition::r#pub();
+                        self.source.state = Some(ServerState::PubSubNameLength);
+                    }
+                    ServerState::PubSubNameLength => {
+                        if self.source.buffer.len() >= U8_SIZE {
                             self.source.length = self.source.buffer.get_u8() as usize;
                             self.source.state = Some(ServerState::PubSubName);
                         } else {
                             return None;
                         }
                     }
-                    ServerState::PubSubNameLength => {}
                     ServerState::PubSubName => {
-                        if self.source.buffer.len() > 3 {
-                            self.source.length = self.source.buffer.get_u16() as usize;
-
+                        if self.source.buffer.len() >= self.source.length {
+                            self.source
+                                .params
+                                .set_pub_name(self.source.buffer.split_to(self.source.length));
+                            self.source.state = Some(ServerState::PubMsgLength);
+                        } else {
+                            return None;
+                        }
+                    }
+                    ServerState::PubMsgLength => {
+                        if self.source.buffer.len() >= U32_SIZE {
+                            self.source.length = self.source.buffer.get_u32() as usize;
                             self.source.state = Some(ServerState::PubMsg);
                         } else {
                             return None;
                         }
                     }
-                    ServerState::PubMsgLength => {}
                     ServerState::PubMsg => {
                         if self.source.buffer.len() >= self.source.length {
                             let msg = self.source.buffer.split_to(self.source.length);
                             self.source.params.set_pub_msg(msg);
+                            let message = self.source.params.return_params();
                             self.source.reset();
-                            return Some(self.source.params.return_params());
+                            return Some(message);
                         } else {
                             return None;
                         }
@@ -257,11 +277,11 @@ impl<'a> Iterator for Iter<'a> {
                         return Some(Ok(Message::Ok));
                     }
                     ServerState::Sub => {
+                        self.source.params = Transition::sub();
                         self.source.state = Some(ServerState::SubReply);
                     }
                     ServerState::SubReply => {
-                        if self.source.buffer.len() >= 1 {
-                            self.source.params = Transition::sub();
+                        if self.source.buffer.len() >= U8_SIZE {
 
                             let reply = self.source.buffer.get_u8() == 1;
                             self.source.params.set_sub_reply(reply);
@@ -272,7 +292,7 @@ impl<'a> Iterator for Iter<'a> {
                         }
                     }
                     ServerState::SubNameLength => {
-                        if self.source.buffer.len() >= 1 {
+                        if self.source.buffer.len() >= U8_SIZE {
                             self.source.length = self.source.buffer.get_u8() as usize;
                             self.source.state = Some(ServerState::SubName);
                         } else {

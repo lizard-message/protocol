@@ -52,6 +52,7 @@ pub(super) enum ServerState {
     Ping,
     Pong,
 
+    // 解析接受发布消息的消息号
     Offset,
     Ack,
 
@@ -113,40 +114,21 @@ impl TryInto<ServerState> for u8 {
     }
 }
 
-#[repr(u8)]
 #[derive(Debug)]
 pub(super) enum ClientState {
-    ServerInfo = STATE_SERVER_INFO,
-    Ping = STATE_PING,
-    Pong = STATE_PONG,
-    Msg = STATE_MSG,
-    Offset = STATE_OFFSET,
-    Ack = STATE_ACK,
-    Sub = STATE_SUB,
-    UnSub = STATE_UNSUB,
-    Err = STATE_ERR,
-    TurnPush = STATE_TURN_PUSH,
-    TurnPull = STATE_TURN_PULL,
-    Ok = STATE_OK,
-}
-
-impl Into<u8> for ClientState {
-    fn into(self) -> u8 {
-        match self {
-            Self::ServerInfo => STATE_SERVER_INFO,
-            Self::Ping => STATE_PING,
-            Self::Pong => STATE_PONG,
-            Self::Msg => STATE_MSG,
-            Self::Offset => STATE_OFFSET,
-            Self::Ack => STATE_ACK,
-            Self::Sub => STATE_SUB,
-            Self::UnSub => STATE_UNSUB,
-            Self::Err => STATE_ERR,
-            Self::TurnPush => STATE_TURN_PUSH,
-            Self::TurnPull => STATE_TURN_PULL,
-            Self::Ok => STATE_OK,
-        }
-    }
+    ServerInfo,
+    Ping,
+    Pong,
+    Msg,
+    Offset,
+    Ack,
+    Sub,
+    UnSub,
+    Err,
+    ErrContent,
+    TurnPush,
+    TurnPull,
+    Ok,
 }
 
 impl TryInto<ClientState> for u8 {

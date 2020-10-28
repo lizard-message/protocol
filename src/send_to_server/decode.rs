@@ -1,3 +1,4 @@
+use crate::common::{U16_SIZE, U32_SIZE, U8_SIZE};
 use crate::state::ClientState;
 use bytes::{Buf, BytesMut};
 use std::convert::{AsRef, TryInto};
@@ -11,27 +12,36 @@ pub enum Error {
 }
 
 #[derive(Debug)]
+pub struct Info {
+    pub version: u8,
+    pub support: u16,
+    pub max_message_length: u32,
+}
+
+#[derive(Debug)]
+pub struct Erro {
+    pub msg: BytesMut,
+}
+
+#[derive(Debug)]
 pub enum Message {
-    Info {
-        version: u8,
-        support: u16,
-        max_message_length: u32,
-    },
+    Info(Box<Info>),
     Ping,
     Pong,
     TurnPush,
     TurnPull,
     Ok,
-    Err {
-        msg: BytesMut,
-    },
+    Err(Box<Erro>),
 }
+
+#[derive(Debug)]
+enum Transition {}
 
 #[derive(Debug)]
 pub struct Decode {
     buffer: BytesMut,
     state: Option<ClientState>,
-    length: Option<usize>,
+    length: usize,
 }
 
 impl Decode {
@@ -39,7 +49,7 @@ impl Decode {
         Self {
             buffer: BytesMut::with_capacity(capacity),
             state: None,
-            length: None,
+            length: 0,
         }
     }
 
@@ -56,7 +66,7 @@ impl Decode {
 
     pub fn reset(&mut self) {
         self.state = None;
-        self.length = None;
+        self.length = 0;
     }
 
     pub fn iter(&mut self) -> Iter<'_> {
@@ -81,11 +91,11 @@ impl<'a> Iterator for Iter<'a> {
                     ClientState::ServerInfo => {
                         if self.source.buffer.len() > 6 {
                             self.source.reset();
-                            return Some(Ok(Message::Info {
+                            return Some(Ok(Message::Info(Box::new(Info {
                                 version: self.source.buffer.get_u8(),
                                 support: self.source.buffer.get_u16(),
                                 max_message_length: self.source.buffer.get_u32(),
-                            }));
+                            }))));
                         } else {
                             return None;
                         }
@@ -120,22 +130,20 @@ impl<'a> Iterator for Iter<'a> {
                         return None;
                     }
                     ClientState::Err => {
-                        if self.source.length.is_some() {
-                            if let Some(length) = self.source.length.as_ref() {
-                                if self.source.buffer.len() >= *length {
-                                    let msg = self.source.buffer.split_to(*length);
-                                    self.source.reset();
-                                    return Some(Ok(Message::Err { msg }));
-                                } else {
-                                    return None;
-                                }
-                            }
+                        if self.source.buffer.len() >= U16_SIZE {
+                            self.source.length = self.source.buffer.get_u16() as usize;
+                            self.source.state = Some(ClientState::ErrContent);
                         } else {
-                            if self.source.buffer.len() > 1 {
-                                self.source.length = Some(self.source.buffer.get_u16() as usize);
-                            } else {
-                                return None;
-                            }
+                            return None;
+                        }
+                    }
+                    ClientState::ErrContent => {
+                        if self.source.buffer.len() >= self.source.length {
+                            let msg = self.source.buffer.split_to(self.source.length);
+                            self.source.reset();
+                            return Some(Ok(Message::Err(Box::new(Erro { msg }))));
+                        } else {
+                            return None;
                         }
                     }
                     ClientState::Ok => {
