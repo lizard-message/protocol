@@ -1,5 +1,6 @@
 use bytes::{BufMut, BytesMut};
 use protocol::send_to_client::decode::{Decode, Error, Info, Message};
+use protocol::send_to_server::encode::ClientConfig;
 
 fn init(buff: &[u8]) -> Option<Result<Message, Error>> {
     let mut decode = Decode::new(1024);
@@ -10,22 +11,14 @@ fn init(buff: &[u8]) -> Option<Result<Message, Error>> {
 
 #[test]
 fn decode_hand_shake() {
-    let mut buff = BytesMut::new();
-
-    // hand shake
-    buff.put_u8(1);
-
-    // version
-    buff.put_u8(1);
-
-    // mask
-    buff.put_u16(3);
-
-    // client message size
-    buff.put_u8(10);
+    let mut client_config = ClientConfig::default();
+    client_config.set_version(1);
+    client_config.support_push();
+    client_config.support_pull();
+    client_config.max_task_size(10);
 
     // a success hand shake
-    if let Message::Info(info) = init(&buff).unwrap().unwrap() {
+    if let Message::Info(info) = init(&client_config.encode()).unwrap().unwrap() {
         assert_eq!(info.version, 1);
         assert_eq!(info.support, 3);
         assert_eq!(info.max_message_size, 10);

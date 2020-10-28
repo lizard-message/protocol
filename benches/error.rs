@@ -33,7 +33,7 @@ fn criterion_benchmark(c: &mut Criterion) {
         b.iter(|| {
             decode.set_buff(&buf);
 
-            if let Message::Err (erro) = decode.iter().next().unwrap().unwrap() {
+            if let Message::Err(erro) = decode.iter().next().unwrap().unwrap() {
                 assert_eq!(&erro.msg, &([b' '; MAX as usize])[..]);
             }
         });

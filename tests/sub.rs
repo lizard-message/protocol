@@ -2,24 +2,14 @@ use bytes::{BufMut, BytesMut};
 
 #[test]
 fn server_decode_sub() {
-    use protocol::send_to_client::decode::{Decode, Message, Sub};
+    use protocol::send_to_client::decode::{Decode, Message};
+    use protocol::send_to_server::encode::Sub;
 
     let mut decode = Decode::new(0);
-    let mut buf = BytesMut::new();
+    let sub = Sub::new("test", false);
 
-    // 订阅
-    buf.put_u8(7);
+    decode.set_buff(&sub.encode());
 
-    // 不回复消息
-    buf.put_u8(0);
-
-    // 订阅名称的长度
-    buf.put_u8(4);
-
-    // 订阅名称
-    buf.put_slice(b"test");
-
-    decode.set_buff(buf);
 
     if let Message::Sub(sub) = decode.iter().next().unwrap().unwrap() {
         assert_eq!(&sub.name, &b"test"[..]);

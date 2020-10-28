@@ -10,15 +10,11 @@ fn criterion_benchmark(c: &mut Criterion) {
         b.iter(|| {
             decode.set_buff(&buff);
 
-            if let Message::Info {
-                version,
-                support: mask,
-                max_message_length: message_length,
-            } = decode.iter().next().unwrap().unwrap()
+            if let Message::Info(info) = decode.iter().next().unwrap().unwrap()
             {
-                assert_eq!(version, 1);
-                assert_eq!(mask, 3);
-                assert_eq!(message_length, 10);
+                assert_eq!(info.version, 1);
+                assert_eq!(info.support, 3);
+                assert_eq!(info.max_message_length, 10);
             }
         });
     });

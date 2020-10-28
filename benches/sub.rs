@@ -9,7 +9,7 @@ fn criterion_benchmark(c: &mut Criterion) {
             decode.set_buff(&[7, 1, 4]);
             decode.set_buff(b"test");
 
-            if let Message::Sub (sub) = decode.iter().next().unwrap().unwrap() {
+            if let Message::Sub(sub) = decode.iter().next().unwrap().unwrap() {
                 assert_eq!(&sub.name, &b"test"[..]);
                 assert_eq!(sub.reply, true);
             }
@@ -23,7 +23,7 @@ fn criterion_benchmark(c: &mut Criterion) {
             decode.set_buff(&[7, 1, 255]);
             decode.set_buff(&[b' '; 255]);
 
-            if let Message::Sub (sub) = decode.iter().next().unwrap().unwrap() {
+            if let Message::Sub(sub) = decode.iter().next().unwrap().unwrap() {
                 assert_eq!(&sub.name, &[b' '; 255][..]);
                 assert_eq!(sub.reply, true);
             }

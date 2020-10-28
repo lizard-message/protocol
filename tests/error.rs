@@ -48,8 +48,8 @@ fn client_decode_error() {
     let mut decode = Decode::new(33);
     decode.set_buff(buf);
 
-    if let Message::Err { msg } = decode.iter().next().unwrap().unwrap() {
-        assert_eq!(&msg, &b"decode error"[..]);
+    if let Message::Err(error) = decode.iter().next().unwrap().unwrap() {
+        assert_eq!(&error.msg, &b"decode error"[..]);
     }
 }
 
@@ -67,8 +67,8 @@ fn client_decode_error_chunk() {
 
         decode.set_buff(b"decode error");
 
-        if let Message::Err { msg } = decode.iter().next().unwrap().unwrap() {
-            assert_eq!(&msg, &b"decode error"[..]);
+        if let Message::Err(error) = decode.iter().next().unwrap().unwrap() {
+            assert_eq!(&error.msg, &b"decode error"[..]);
         }
     }
 }
