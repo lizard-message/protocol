@@ -18,6 +18,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Run tests
-      run: cargo test --verbose
+      run: cargo test
     - name: Bench
-      run: cargo bench --verbose
+      run: cargo bench
