@@ -1,4 +1,4 @@
-use crate::state::{Support, STATE_ERR, STATE_OK, STATE_PING, STATE_PONG, STATE_SERVER_INFO};
+use crate::state::{Support, STATE_ERR, STATE_OK, STATE_PING, STATE_PONG, STATE_SERVER_INFO, STATE_MSG};
 use bytes::{BufMut, BytesMut};
 
 use std::default::Default;
@@ -105,3 +105,28 @@ impl Err {
     }
 }
 
+#[derive(Debug)]
+pub struct Msg<'a> {
+    msg: &'a [u8],
+    offset: u64,
+}
+
+impl<'a> Msg<'a> {
+    pub fn new(offset: u64, msg: &'a [u8]) -> Self {
+        Self {
+            offset,
+            msg,
+        }
+    }
+
+    pub fn encode(self) -> BytesMut {
+        let mut buff = BytesMut::with_capacity(self.msg.len() + 13);
+
+        buff.put_u8(STATE_MSG);
+        buff.put_u64(self.offset);
+        buff.put_u32(self.msg.len() as u32);
+        buff.extend_from_slice(&self.msg);
+
+        buff
+    }
+}
