@@ -1,9 +1,10 @@
-use crate::common::{U16_SIZE, U32_SIZE, U8_SIZE};
+use crate::common::{U16_SIZE, U32_SIZE, U8_SIZE, U64_SIZE};
 use crate::state::ClientState;
 use bytes::{Buf, BytesMut};
 use std::convert::{AsRef, TryInto};
 use std::iter::Iterator;
 use thiserror::Error;
+use std::mem::swap;
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -24,6 +25,12 @@ pub struct Erro {
 }
 
 #[derive(Debug)]
+pub struct Msg {
+    pub offset: u64,
+    pub payload: BytesMut,
+}
+
+#[derive(Debug)]
 pub enum Message {
     Info(Box<Info>),
     Ping,
@@ -32,16 +39,52 @@ pub enum Message {
     TurnPull,
     Ok,
     Err(Box<Erro>),
+    Msg(Box<Msg>),
 }
 
 #[derive(Debug)]
-enum Transition {}
+enum Transition {
+    None,
+    Msg { offset: u64, payload: BytesMut },
+}
+
+impl Transition {
+    fn msg() -> Self {
+        Transition::Msg {
+            offset: 0,
+            payload: BytesMut::new(),
+        }
+    }
+
+    fn set_msg_offset(&mut self, offset: u64) {
+        if let Transition::Msg { offset: non_offset, payload: _} = self {
+            *non_offset = offset;
+        }
+    }
+
+    fn set_msg_payload(&mut self, payload: BytesMut) {
+        if let Transition::Msg { offset: _, payload: non_payload } = self {
+            *non_payload = payload;
+        }
+    }
+
+    fn return_params(&mut self) -> Result<Message, Error> {
+        let mut item = Transition::None;
+        swap(self, &mut item);
+
+        match item {
+            Self::None => Err(Error::Parse),
+            Self::Msg { offset, payload } => Ok(Message::Msg(Box::new( Msg {offset, payload} )))
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct Decode {
     buffer: BytesMut,
     state: Option<ClientState>,
     length: usize,
+    params: Transition
 }
 
 impl Decode {
@@ -50,6 +93,7 @@ impl Decode {
             buffer: BytesMut::with_capacity(capacity),
             state: None,
             length: 0,
+            params: Transition::None
         }
     }
 
@@ -67,6 +111,7 @@ impl Decode {
     pub fn reset(&mut self) {
         self.state = None;
         self.length = 0;
+        self.params = Transition::None;
     }
 
     pub fn iter(&mut self) -> Iter<'_> {
@@ -109,24 +154,48 @@ impl<'a> Iterator for Iter<'a> {
                         return Some(Ok(Message::Pong));
                     }
                     ClientState::TurnPush => {
-                        return None;
+                        self.source.reset();
+                        return Some(Ok(Message::TurnPush));
                     }
                     ClientState::TurnPull => {
-                        return None;
+                        self.source.reset();
+                        return Some(Ok(Message::TurnPull));
                     }
                     ClientState::Ack => {
                         return None;
                     }
                     ClientState::Msg => {
-                        return None;
+                        self.source.params = Transition::msg();
+                        self.source.state = Some(ClientState::MsgOffset);
+                    }
+                    ClientState::MsgOffset => {
+                        if self.source.buffer.len() >= U64_SIZE {
+                            self.source.params.set_msg_offset(self.source.buffer.get_u64());
+                            self.source.state = Some(ClientState::MsgLength);
+                        } else {
+                            return None;
+                        }
+                    }
+                    ClientState::MsgLength => {
+                        if self.source.buffer.len() >= U32_SIZE {
+                            self.source.length = self.source.buffer.get_u32() as usize;
+                            self.source.state = Some(ClientState::MsgPayload);
+                        } else {
+                            return None;
+                        }
+                    }
+                    ClientState::MsgPayload => {
+                        if self.source.buffer.len() >= self.source.length {
+                            let payload = self.source.buffer.split_to(self.source.length);
+                            self.source.params.set_msg_payload(payload);
+                            let msg = self.source.params.return_params();
+                            self.source.reset();
+                            return Some(msg);
+                        } else {
+                            return None;
+                        }
                     }
                     ClientState::Offset => {
-                        return None;
-                    }
-                    ClientState::Sub => {
-                        return None;
-                    }
-                    ClientState::UnSub => {
                         return None;
                     }
                     ClientState::Err => {

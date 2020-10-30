@@ -32,3 +32,7 @@ harness = false
 [[bench]]
 name = "pub"
 harness = false
+
+[[bench]]
+name = "msg"
+harness = false
