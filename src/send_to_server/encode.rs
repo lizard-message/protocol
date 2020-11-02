@@ -130,14 +130,12 @@ impl Err {
 #[derive(Debug)]
 pub struct Sub<'a> {
     name: &'a str,
-    reply: bool,
 }
 
 impl<'a> Sub<'a> {
-    pub fn new(name: &'a str, reply: bool) -> Self {
+    pub fn new(name: &'a str) -> Self {
         Self {
             name,
-            reply
         }
     }
 
@@ -145,7 +143,6 @@ impl<'a> Sub<'a> {
         let mut buff = BytesMut::with_capacity(self.name.len() + 3);
 
         buff.put_u8(STATE_SUB);
-        buff.put_u8(self.reply as u8);
         buff.put_u8(self.name.as_bytes().len() as u8);
         buff.extend_from_slice(self.name.as_bytes());
 

@@ -34,7 +34,6 @@ pub struct Pub {
 #[derive(Debug)]
 pub struct Sub {
     pub name: BytesMut,
-    pub reply: bool,
 }
 
 #[derive(Debug)]
@@ -54,7 +53,7 @@ pub enum Message {
 #[derive(Debug)]
 enum Transition {
     None,
-    Sub { name: BytesMut, reply: bool },
+    Sub { name: BytesMut},
     Pub { name: BytesMut, msg: BytesMut },
 }
 
@@ -62,27 +61,15 @@ impl Transition {
     fn sub() -> Self {
         Transition::Sub {
             name: BytesMut::new(),
-            reply: false,
         }
     }
 
     fn set_sub_name(&mut self, name: BytesMut) {
         if let Transition::Sub {
             name: non_name,
-            reply: _,
         } = self
         {
             *non_name = name;
-        }
-    }
-
-    fn set_sub_reply(&mut self, reply: bool) {
-        if let Transition::Sub {
-            name: _,
-            reply: non_reply,
-        } = self
-        {
-            *non_reply = reply;
         }
     }
 
@@ -119,7 +106,7 @@ impl Transition {
 
         match item {
             Self::None => Err(Error::Parse),
-            Self::Sub { name, reply } => Ok(Message::Sub(Box::new(Sub { name, reply }))),
+            Self::Sub { name } => Ok(Message::Sub(Box::new(Sub { name }))),
             Self::Pub { name, msg } => Ok(Message::Pub(Box::new(Pub { name, msg }))),
         }
     }
@@ -278,18 +265,7 @@ impl<'a> Iterator for Iter<'a> {
                     }
                     ServerState::Sub => {
                         self.source.params = Transition::sub();
-                        self.source.state = Some(ServerState::SubReply);
-                    }
-                    ServerState::SubReply => {
-                        if self.source.buffer.len() >= U8_SIZE {
-
-                            let reply = self.source.buffer.get_u8() == 1;
-                            self.source.params.set_sub_reply(reply);
-
-                            self.source.state = Some(ServerState::SubNameLength);
-                        } else {
-                            return None;
-                        }
+                        self.source.state = Some(ServerState::SubNameLength);
                     }
                     ServerState::SubNameLength => {
                         if self.source.buffer.len() >= U8_SIZE {

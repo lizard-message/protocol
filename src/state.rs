@@ -88,9 +88,6 @@ pub(super) enum ServerState {
 
     // 解析订阅名称
     SubName,
-
-    // 解析是否回复订阅
-    SubReply,
 }
 
 impl TryInto<ServerState> for u8 {
