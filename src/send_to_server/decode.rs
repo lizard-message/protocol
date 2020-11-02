@@ -28,6 +28,7 @@ pub struct Erro {
 pub struct Msg {
     pub offset: u64,
     pub payload: BytesMut,
+    pub sub_name: BytesMut,
 }
 
 #[derive(Debug)]
@@ -45,7 +46,7 @@ pub enum Message {
 #[derive(Debug)]
 enum Transition {
     None,
-    Msg { offset: u64, payload: BytesMut },
+    Msg { offset: u64, payload: BytesMut, sub_name: BytesMut },
 }
 
 impl Transition {
@@ -53,17 +54,24 @@ impl Transition {
         Transition::Msg {
             offset: 0,
             payload: BytesMut::new(),
+            sub_name: BytesMut::new(),
         }
     }
 
     fn set_msg_offset(&mut self, offset: u64) {
-        if let Transition::Msg { offset: non_offset, payload: _} = self {
+        if let Transition::Msg { offset: non_offset, payload: _, sub_name: _} = self {
             *non_offset = offset;
         }
     }
 
+    fn set_msg_subname(&mut self, sub_name: BytesMut) {
+        if let Transition::Msg { offset: _, payload: _, sub_name: non_subname } = self {
+            *non_subname = sub_name;
+        }
+    }
+
     fn set_msg_payload(&mut self, payload: BytesMut) {
-        if let Transition::Msg { offset: _, payload: non_payload } = self {
+        if let Transition::Msg { offset: _, payload: non_payload, sub_name: _ } = self {
             *non_payload = payload;
         }
     }
@@ -74,7 +82,7 @@ impl Transition {
 
         match item {
             Self::None => Err(Error::Parse),
-            Self::Msg { offset, payload } => Ok(Message::Msg(Box::new( Msg {offset, payload} )))
+            Self::Msg { offset, payload, sub_name } => Ok(Message::Msg(Box::new( Msg {offset, payload, sub_name} )))
         }
     }
 }
@@ -171,6 +179,22 @@ impl<'a> Iterator for Iter<'a> {
                     ClientState::MsgOffset => {
                         if self.source.buffer.len() >= U64_SIZE {
                             self.source.params.set_msg_offset(self.source.buffer.get_u64());
+                            self.source.state = Some(ClientState::MsgSubLength);
+                        } else {
+                            return None;
+                        }
+                    }
+                    ClientState::MsgSubLength => {
+                        if self.source.buffer.len() >= U8_SIZE {
+                            self.source.length = self.source.buffer.get_u8() as usize;
+                            self.source.state = Some(ClientState::MsgSubName);
+                        } else {
+                            return None;
+                        }
+                    }
+                    ClientState::MsgSubName => {
+                        if self.source.buffer.len() >= self.source.length {
+                            self.source.params.set_msg_subname(self.source.buffer.split_to(self.source.length));
                             self.source.state = Some(ClientState::MsgLength);
                         } else {
                             return None;

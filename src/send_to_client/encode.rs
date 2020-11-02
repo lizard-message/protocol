@@ -107,23 +107,27 @@ impl Err {
 
 #[derive(Debug)]
 pub struct Msg<'a> {
+    sub_name: &'a [u8],
     msg: &'a [u8],
     offset: u64,
 }
 
 impl<'a> Msg<'a> {
-    pub fn new(offset: u64, msg: &'a [u8]) -> Self {
+    pub fn new(offset: u64, sub_name: &'a [u8], msg: &'a [u8]) -> Self {
         Self {
+            sub_name,
             offset,
             msg,
         }
     }
 
     pub fn encode(self) -> BytesMut {
-        let mut buff = BytesMut::with_capacity(self.msg.len() + 13);
+        let mut buff = BytesMut::with_capacity(self.msg.len() + self.sub_name.len() + 14);
 
         buff.put_u8(STATE_MSG);
         buff.put_u64(self.offset);
+        buff.put_u8(self.sub_name.len() as u8);
+        buff.extend_from_slice(&self.sub_name);
         buff.put_u32(self.msg.len() as u32);
         buff.extend_from_slice(&self.msg);
 

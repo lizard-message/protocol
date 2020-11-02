@@ -118,6 +118,8 @@ pub(super) enum ClientState {
     Pong,
     Msg,
     MsgOffset,
+    MsgSubLength,
+    MsgSubName,
     MsgLength,
     MsgPayload,
     Offset,
