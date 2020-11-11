@@ -1,8 +1,6 @@
 use crate::state::{
-    Support, STATE_CLIENT_INFO, STATE_ERR, STATE_OK, STATE_PING, STATE_PONG, STATE_TURN_PULL,
-    STATE_TURN_PUSH,
-    STATE_SUB,
-    STATE_PUB,
+    Support, STATE_CLIENT_INFO, STATE_ERR, STATE_OK, STATE_PING, STATE_PONG, STATE_PUB, STATE_SUB,
+    STATE_TURN_PULL, STATE_TURN_PUSH, STATE_UNSUB,
 };
 use bytes::{BufMut, BytesMut};
 use std::default::Default;
@@ -134,9 +132,7 @@ pub struct Sub<'a> {
 
 impl<'a> Sub<'a> {
     pub fn new(name: &'a str) -> Self {
-        Self {
-            name,
-        }
+        Self { name }
     }
 
     pub fn encode(self) -> BytesMut {
@@ -151,17 +147,20 @@ impl<'a> Sub<'a> {
 }
 
 #[derive(Debug)]
-pub struct Pub<'a, A> where A: AsRef<[u8]> {
+pub struct Pub<'a, A>
+where
+    A: AsRef<[u8]>,
+{
     sub_name: &'a str,
-    payload: A
+    payload: A,
 }
 
-impl<'a, A> Pub<'a, A> where A: AsRef<[u8]> {
+impl<'a, A> Pub<'a, A>
+where
+    A: AsRef<[u8]>,
+{
     pub fn new(sub_name: &'a str, payload: A) -> Self {
-        Self {
-            sub_name,
-            payload
-        }
+        Self { sub_name, payload }
     }
 
     pub fn encode(self) -> BytesMut {
@@ -173,6 +172,29 @@ impl<'a, A> Pub<'a, A> where A: AsRef<[u8]> {
 
         buff.put_u32(self.payload.as_ref().len() as u32);
         buff.extend_from_slice(self.payload.as_ref());
+
+        buff
+    }
+}
+
+#[derive(Debug)]
+pub struct UnSub<'a> {
+    name: &'a str,
+}
+
+impl<'a> UnSub<'a> {
+    pub fn new(sub_name: &'a str) -> Self {
+        UnSub {
+            name: sub_name
+        }
+    }
+
+    pub fn encode(self) -> BytesMut {
+        let mut buff = BytesMut::new();
+
+        buff.put_u8(STATE_UNSUB);
+        buff.put_u8(self.name.as_bytes().len() as u8);
+        buff.extend_from_slice(self.name.as_bytes());
 
         buff
     }

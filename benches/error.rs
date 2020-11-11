@@ -8,7 +8,6 @@ fn criterion_benchmark(c: &mut Criterion) {
         let content = "decode error";
         let err_encode = Err::new(content).encode();
 
-
         b.iter(|| {
             decode.set_buff(&err_encode);
 
@@ -23,7 +22,6 @@ fn criterion_benchmark(c: &mut Criterion) {
         const content: [u8; 65535] = [b' '; 65535];
         let content_str = unsafe { std::str::from_utf8_unchecked(&content) };
         let err_encode = Err::new(content_str).encode();
-
 
         b.iter(|| {
             decode.set_buff(&err_encode);

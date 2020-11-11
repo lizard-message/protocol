@@ -1,10 +1,10 @@
-use crate::common::{U16_SIZE, U32_SIZE, U8_SIZE, U64_SIZE};
+use crate::common::{U16_SIZE, U32_SIZE, U64_SIZE, U8_SIZE};
 use crate::state::ClientState;
 use bytes::{Buf, BytesMut};
 use std::convert::{AsRef, TryInto};
 use std::iter::Iterator;
-use thiserror::Error;
 use std::mem::swap;
+use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -46,7 +46,11 @@ pub enum Message {
 #[derive(Debug)]
 enum Transition {
     None,
-    Msg { offset: u64, payload: BytesMut, sub_name: BytesMut },
+    Msg {
+        offset: u64,
+        payload: BytesMut,
+        sub_name: BytesMut,
+    },
 }
 
 impl Transition {
@@ -59,19 +63,34 @@ impl Transition {
     }
 
     fn set_msg_offset(&mut self, offset: u64) {
-        if let Transition::Msg { offset: non_offset, payload: _, sub_name: _} = self {
+        if let Transition::Msg {
+            offset: non_offset,
+            payload: _,
+            sub_name: _,
+        } = self
+        {
             *non_offset = offset;
         }
     }
 
     fn set_msg_subname(&mut self, sub_name: BytesMut) {
-        if let Transition::Msg { offset: _, payload: _, sub_name: non_subname } = self {
+        if let Transition::Msg {
+            offset: _,
+            payload: _,
+            sub_name: non_subname,
+        } = self
+        {
             *non_subname = sub_name;
         }
     }
 
     fn set_msg_payload(&mut self, payload: BytesMut) {
-        if let Transition::Msg { offset: _, payload: non_payload, sub_name: _ } = self {
+        if let Transition::Msg {
+            offset: _,
+            payload: non_payload,
+            sub_name: _,
+        } = self
+        {
             *non_payload = payload;
         }
     }
@@ -82,7 +101,15 @@ impl Transition {
 
         match item {
             Self::None => Err(Error::Parse),
-            Self::Msg { offset, payload, sub_name } => Ok(Message::Msg(Box::new( Msg {offset, payload, sub_name} )))
+            Self::Msg {
+                offset,
+                payload,
+                sub_name,
+            } => Ok(Message::Msg(Box::new(Msg {
+                offset,
+                payload,
+                sub_name,
+            }))),
         }
     }
 }
@@ -92,7 +119,7 @@ pub struct Decode {
     buffer: BytesMut,
     state: Option<ClientState>,
     length: usize,
-    params: Transition
+    params: Transition,
 }
 
 impl Decode {
@@ -101,7 +128,7 @@ impl Decode {
             buffer: BytesMut::with_capacity(capacity),
             state: None,
             length: 0,
-            params: Transition::None
+            params: Transition::None,
         }
     }
 
@@ -178,7 +205,9 @@ impl<'a> Iterator for Iter<'a> {
                     }
                     ClientState::MsgOffset => {
                         if self.source.buffer.len() >= U64_SIZE {
-                            self.source.params.set_msg_offset(self.source.buffer.get_u64());
+                            self.source
+                                .params
+                                .set_msg_offset(self.source.buffer.get_u64());
                             self.source.state = Some(ClientState::MsgSubLength);
                         } else {
                             return None;
@@ -194,7 +223,9 @@ impl<'a> Iterator for Iter<'a> {
                     }
                     ClientState::MsgSubName => {
                         if self.source.buffer.len() >= self.source.length {
-                            self.source.params.set_msg_subname(self.source.buffer.split_to(self.source.length));
+                            self.source
+                                .params
+                                .set_msg_subname(self.source.buffer.split_to(self.source.length));
                             self.source.state = Some(ClientState::MsgLength);
                         } else {
                             return None;

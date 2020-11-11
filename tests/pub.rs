@@ -1,6 +1,6 @@
+use bytes::{BufMut, BytesMut};
 use protocol::send_to_client::decode::{Decode, Message};
 use protocol::send_to_server::encode::Pub;
-use bytes::{BufMut, BytesMut};
 
 #[test]
 fn pub_decode() {
@@ -20,36 +20,36 @@ fn pub_decode_chunk() {
     let mut buff = BytesMut::new();
 
     for _ in 0..100 {
-      buff.put_u8(8);
-      decode.set_buff(&buff);
-      assert!(decode.iter().next().is_none());
-      buff.clear();
+        buff.put_u8(8);
+        decode.set_buff(&buff);
+        assert!(decode.iter().next().is_none());
+        buff.clear();
 
-      buff.put_u8(4);
-      
-      decode.set_buff(&buff);
-      assert!(decode.iter().next().is_none());
-      buff.clear();
+        buff.put_u8(4);
 
-      buff.extend_from_slice(b"test");
+        decode.set_buff(&buff);
+        assert!(decode.iter().next().is_none());
+        buff.clear();
 
-      decode.set_buff(&buff);
-      assert!(decode.iter().next().is_none());
-      buff.clear();
+        buff.extend_from_slice(b"test");
 
-      buff.put_u32(6);
-      
-      decode.set_buff(&buff);
-      assert!(decode.iter().next().is_none());
-      buff.clear();
+        decode.set_buff(&buff);
+        assert!(decode.iter().next().is_none());
+        buff.clear();
 
-      buff.extend_from_slice(b"qweasd");
-      decode.set_buff(&buff);
+        buff.put_u32(6);
 
-      if let Message::Pub(r#pub) = decode.iter().next().unwrap().unwrap() {
-          assert_eq!(&r#pub.name, &"test"[..]);
-          assert_eq!(&r#pub.msg, &"qweasd"[..]);
-          buff.clear();
-      }
+        decode.set_buff(&buff);
+        assert!(decode.iter().next().is_none());
+        buff.clear();
+
+        buff.extend_from_slice(b"qweasd");
+        decode.set_buff(&buff);
+
+        if let Message::Pub(r#pub) = decode.iter().next().unwrap().unwrap() {
+            assert_eq!(&r#pub.name, &"test"[..]);
+            assert_eq!(&r#pub.msg, &"qweasd"[..]);
+            buff.clear();
+        }
     }
 }

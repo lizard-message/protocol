@@ -19,9 +19,9 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
 
     c.bench_function("server decode pub max", |b| {
-        use std::u8::MAX as u8_max;
-        use std::u32::MAX as u32_max;
         use std::u16::MAX as u16_max;
+        use std::u32::MAX as u32_max;
+        use std::u8::MAX as u8_max;
         let mut decode = Decode::new(0);
 
         b.iter(|| {

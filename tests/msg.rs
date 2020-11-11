@@ -1,7 +1,6 @@
 use protocol::send_to_client::encode::Msg;
 use protocol::send_to_server::decode::{Decode, Error, Message};
 
-
 #[test]
 fn decode_msg() {
     let msg = Msg::new(9, b"test_msg", b"test");

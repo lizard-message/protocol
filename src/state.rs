@@ -88,6 +88,15 @@ pub(super) enum ServerState {
 
     // 解析订阅名称
     SubName,
+
+    // 解析取消订阅
+    UnSub,
+
+    // 解析取消订阅名称长度
+    UnSubNameLength,
+
+    // 解析取消订阅名称
+    UnSubName,
 }
 
 impl TryInto<ServerState> for u8 {
@@ -106,6 +115,7 @@ impl TryInto<ServerState> for u8 {
             STATE_OK => Ok(ServerState::Ok),
             STATE_SUB => Ok(ServerState::Sub),
             STATE_PUB => Ok(ServerState::Pub),
+            STATE_UNSUB => Ok(ServerState::UnSub),
             _ => Err(()),
         }
     }

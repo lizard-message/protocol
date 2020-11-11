@@ -10,7 +10,6 @@ fn server_decode_sub() {
 
     decode.set_buff(&sub.encode());
 
-
     if let Message::Sub(sub) = decode.iter().next().unwrap().unwrap() {
         assert_eq!(&sub.name, &b"test"[..]);
     }
@@ -25,7 +24,6 @@ fn server_decode_sub_chunk() {
     for _ in 0..100 {
         decode.set_buff(&[7]);
         assert!(decode.iter().next().is_none());
-
 
         decode.set_buff(&[4]);
         assert!(decode.iter().next().is_none());
