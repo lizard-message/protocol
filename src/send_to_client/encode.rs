@@ -1,4 +1,6 @@
-use crate::state::{Support, STATE_ERR, STATE_OK, STATE_PING, STATE_PONG, STATE_SERVER_INFO, STATE_MSG};
+use crate::state::{
+    Support, STATE_ERR, STATE_MSG, STATE_OK, STATE_PING, STATE_PONG, STATE_SERVER_INFO,
+};
 use bytes::{BufMut, BytesMut};
 
 use std::default::Default;

@@ -36,3 +36,8 @@ harness = false
 [[bench]]
 name = "msg"
 harness = false
+
+[[bench]]
+name = "unsub"
+harness = false
+
