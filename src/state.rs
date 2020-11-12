@@ -92,6 +92,9 @@ pub(super) enum ServerState {
     // 解析取消订阅
     UnSub,
 
+    // 解析取消订阅的数量
+    UnSubTotal,
+
     // 解析取消订阅名称长度
     UnSubNameLength,
 

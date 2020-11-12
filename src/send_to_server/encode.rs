@@ -179,22 +179,30 @@ where
 
 #[derive(Debug)]
 pub struct UnSub<'a> {
-    name: &'a str,
+    name_list: Vec<&'a [u8]>,
 }
 
 impl<'a> UnSub<'a> {
-    pub fn new(sub_name: &'a str) -> Self {
+    pub fn new() -> Self {
         UnSub {
-            name: sub_name
+            name_list: Vec::new(),
         }
+    }
+
+    pub fn push(&mut self, name: & 'a [u8]) {
+        self.name_list.push(name);
     }
 
     pub fn encode(self) -> BytesMut {
         let mut buff = BytesMut::new();
 
         buff.put_u8(STATE_UNSUB);
-        buff.put_u8(self.name.as_bytes().len() as u8);
-        buff.extend_from_slice(self.name.as_bytes());
+        buff.put_u16(self.name_list.len() as u16);
+
+        self.name_list.into_iter().for_each(|item| {
+            buff.put_u8(item.len() as u8);
+            buff.extend_from_slice(item);
+        });
 
         buff
     }

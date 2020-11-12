@@ -38,7 +38,7 @@ pub struct Sub {
 
 #[derive(Debug)]
 pub struct UnSub {
-    pub name: BytesMut,
+    pub name_list: Vec<BytesMut>,
 }
 
 #[derive(Debug)]
@@ -59,9 +59,18 @@ pub enum Message {
 #[derive(Debug)]
 enum Transition {
     None,
-    Sub { name: BytesMut },
-    Pub { name: BytesMut, msg: BytesMut },
-    UnSub { name: BytesMut },
+    Sub {
+        name: BytesMut,
+    },
+    Pub {
+        name: BytesMut,
+        msg: BytesMut,
+    },
+    UnSub {
+        name_list: Vec<BytesMut>,
+        total: u16,
+        count: u16,
+    },
 }
 
 impl Transition {
@@ -79,8 +88,12 @@ impl Transition {
             Transition::Pub { name, msg: _ } => {
                 *name = sub_name;
             }
-            Transition::UnSub { name } => {
-                *name = sub_name;
+            Transition::UnSub {
+                name_list,
+                total: _,
+                count: _,
+            } => {
+                name_list.push(sub_name);
             }
             _ => {}
         }
@@ -103,9 +116,48 @@ impl Transition {
         }
     }
 
+    fn set_total(&mut self, new_total: u16) {
+        match self {
+            Self::UnSub {
+                name_list: _,
+                total,
+                count: _,
+            } => {
+                *total = new_total;
+            }
+            _ => {}
+        }
+    }
+
+    fn fetch_add_one(&mut self) {
+        match self {
+            Self::UnSub {
+                name_list: _,
+                total: _,
+                count,
+            } => {
+                *count += 1;
+            }
+            _ => {}
+        }
+    }
+
+    fn is_enough(&self) -> bool {
+        match self {
+            Self::UnSub {
+                name_list: _,
+                total,
+                count,
+            } => *count >= *total,
+            _ => false,
+        }
+    }
+
     fn unsub() -> Self {
         Transition::UnSub {
-            name: BytesMut::new(),
+            name_list: Vec::new(),
+            total: 0,
+            count: 0,
         }
     }
 
@@ -117,7 +169,11 @@ impl Transition {
             Self::None => Err(Error::Parse),
             Self::Sub { name } => Ok(Message::Sub(Box::new(Sub { name }))),
             Self::Pub { name, msg } => Ok(Message::Pub(Box::new(Pub { name, msg }))),
-            Self::UnSub { name } => Ok(Message::UnSub(Box::new(UnSub { name }))),
+            Self::UnSub {
+                name_list,
+                total: _,
+                count: _,
+            } => Ok(Message::UnSub(Box::new(UnSub { name_list }))),
         }
     }
 }
@@ -162,8 +218,8 @@ impl Decode {
         self.params = Transition::None;
     }
 
-    // 统一获取订阅名称长度
-    fn get_sub_name_length(&mut self) -> Option<()> {
+    // 统一获取并订阅名称长度
+    fn get_and_set_sub_name_length(&mut self) -> Option<()> {
         if self.buffer.len() >= U8_SIZE {
             self.length = self.buffer.get_u8() as usize;
             Some(())
@@ -176,6 +232,16 @@ impl Decode {
     fn get_payload(&mut self) -> Option<BytesMut> {
         if self.buffer.len() >= self.length {
             Some(self.buffer.split_to(self.length))
+        } else {
+            None
+        }
+    }
+
+    // 获取消息数量
+    fn get_and_set_total(&mut self) -> Option<()> {
+        if self.buffer.len() >= U16_SIZE {
+            self.params.set_total(self.buffer.get_u16());
+            Some(())
         } else {
             None
         }
@@ -234,7 +300,7 @@ impl<'a> Iterator for Iter<'a> {
                         self.source.state = Some(ServerState::PubSubNameLength);
                     }
                     ServerState::PubSubNameLength => {
-                        self.source.get_sub_name_length()?;
+                        self.source.get_and_set_sub_name_length()?;
                         self.source.state = Some(ServerState::PubSubName);
                     }
                     ServerState::PubSubName => {
@@ -280,7 +346,7 @@ impl<'a> Iterator for Iter<'a> {
                         self.source.state = Some(ServerState::SubNameLength);
                     }
                     ServerState::SubNameLength => {
-                        self.source.get_sub_name_length()?;
+                        self.source.get_and_set_sub_name_length()?;
                         self.source.state = Some(ServerState::SubName);
                     }
                     ServerState::SubName => {
@@ -292,18 +358,28 @@ impl<'a> Iterator for Iter<'a> {
                     }
                     ServerState::UnSub => {
                         self.source.params = Transition::unsub();
+                        self.source.state = Some(ServerState::UnSubTotal);
+                    }
+                    ServerState::UnSubTotal => {
+                        self.source.get_and_set_total()?;
                         self.source.state = Some(ServerState::UnSubNameLength);
                     }
                     ServerState::UnSubNameLength => {
-                        self.source.get_sub_name_length()?;
+                        self.source.get_and_set_sub_name_length()?;
                         self.source.state = Some(ServerState::UnSubName);
                     }
                     ServerState::UnSubName => {
                         let name = self.source.get_payload()?;
                         self.source.params.set_sub_name(name);
-                        let unsub = self.source.params.return_params();
-                        self.source.reset();
-                        return Some(unsub);
+                        self.source.params.fetch_add_one();
+
+                        if self.source.params.is_enough() {
+                            let unsub = self.source.params.return_params();
+                            self.source.reset();
+                            return Some(unsub);
+                        } else {
+                            self.source.state = Some(ServerState::UnSubNameLength);
+                        }
                     }
                 }
             } else {
